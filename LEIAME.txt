@@ -1,0 +1,15 @@
+COMO GERAR O APK (sem instalar nada no computador)
+
+1. Crie uma conta gratuita em github.com e clique em "New repository". Dê um nome (ex.: telaplay) e crie.
+2. No repositório, clique em "uploading an existing file" e envie TUDO que está dentro desta pasta:
+   package.json, capacitor.config.json, as pastas www, android-res, android-src e android-assets e a pasta .github
+   (se a pasta .github não subir, clique em Add file > Create new file, digite o nome
+    .github/workflows/build-apk.yml e cole o conteúdo do arquivo de mesmo nome).
+3. Clique em "Commit changes".
+4. Abra a aba "Actions". O "Gerar APK" roda sozinho (leva uns 5 a 10 minutos).
+   Se não rodar, clique em "Gerar APK" > "Run workflow".
+5. Quando ficar verde, abra a execução e baixe "telaplay-apk" em "Artifacts".
+6. Descompacte o zip baixado. Dentro está o app-debug.apk.
+7. Passe o APK para o celular e abra. Se o Android pedir, permita "instalar apps de fontes desconhecidas".
+
+Para atualizar o app depois: substitua www/index.html no repositório e faça commit. Um novo APK é gerado.
