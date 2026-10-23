@@ -25,6 +25,11 @@ jobs:
           M=android/app/src/main/AndroidManifest.xml
           sed -i 's#<category android:name="android.intent.category.LAUNCHER" />#&\n                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />#' $M
           sed -i 's#<application#<uses-feature android:name="android.hardware.touchscreen" android:required="false" />\n    <uses-feature android:name="android.software.leanback" android:required="false" />\n    <application android:banner="@mipmap/ic_launcher"#' $M
+      - name: Tela cheia e tela de abertura (TelaPlay)
+        run: |
+          D=android/app/src/main/java/com/playeriptv/app
+          mkdir -p $D && cp android-src/MainActivity.java $D/MainActivity.java
+          find android/app/src/main/res -type f -name splash.png -exec cp android-assets/splash.png {} \;
       - name: Aplicar o ícone do TelaPlay
         run: cp -r android-res/. android/app/src/main/res/
       - name: Usar chave fixa
