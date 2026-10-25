@@ -145,7 +145,7 @@ body.drawer #vbox::after{content:"Toque aqui para tela cheia";position:absolute;
 #msg{position:absolute;left:0;right:0;top:62%;text-align:center;padding:0 24px;color:#cbd5e1;pointer-events:none}
 #toast{position:absolute;top:18%;left:50%;transform:translateX(-50%);padding:6px 16px;border-radius:20px;background:#000b;opacity:0;transition:opacity .2s;pointer-events:none}
 #toast.show{opacity:1}
-#ctl{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:max(14px,env(safe-area-inset-top)) 22px max(14px,env(safe-area-inset-bottom));background:linear-gradient(#000a,#0000 22%,#0000 60%,#000b);opacity:0;pointer-events:none;transition:opacity .2s}
+#ctl{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:max(14px,env(safe-area-inset-top)) max(22px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(22px,env(safe-area-inset-left));background:linear-gradient(#000a,#0000 22%,#0000 60%,#000b);opacity:0;pointer-events:none;transition:opacity .2s}
 #player.ui #ctl{opacity:1;pointer-events:auto}
 .ptop{display:flex;align-items:center;gap:14px}
 #ptitle{flex:1;font-size:calc(18px*var(--fs,1));overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -324,6 +324,7 @@ button:focus-visible,.gp:focus-visible,summary:focus-visible,[tabindex]:focus-vi
 @media(min-width:1280px){#list.pgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}}
 @media(max-width:760px){#list.pgrid{grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;padding:8px}#list.pgrid .ch>span:last-child{font-size:calc(12px*var(--fs,1))}}
 :root.tv #list.pgrid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:16px}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
 </style>
 </head>
 <body>
@@ -624,6 +625,7 @@ function leavePlayer() {
   endCast(); savePos(); stop(); S.direct = false; $("player").classList.add("hidden"); document.body.classList.remove("drawer");
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
   if (!$("home").classList.contains("hidden")) renderCont();
+  syncOrientation();
 }
 
 /* ---------- tela inicial ---------- */
@@ -1030,6 +1032,7 @@ function play(url, name, isHls, key) {
   $("spin").classList.remove("hidden");
   $("plistl").textContent = {live: "Lista de Canais", vod: "Lista de Filmes", series: "Episódios"}[S.mode];
   if (wasHidden) document.body.classList.toggle("drawer", !S.direct);
+  syncOrientation();
   requestAnimationFrame(applyAsp);
   bump();
   v.onplaying = () => { $("spin").classList.add("hidden"); $("msg").textContent = ""; S.played = true; S.retry = 0; };
@@ -1198,7 +1201,7 @@ function step(d) {
 $("pprev").onclick = () => step(-1);
 $("pnext").onclick = () => step(1);
 function setDrawer(on) {
-  document.body.classList.toggle("drawer", on);
+  document.body.classList.toggle("drawer", on); syncOrientation();
   $("aspmenu").classList.add("hidden");
   requestAnimationFrame(() => {
     applyAsp();
@@ -1233,7 +1236,22 @@ $("plist").onclick = async () => {
   setDrawer(true);
 };
 
+const isNative = () => !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
+function setLandscape(on) {
+  const pl = (window.Capacitor && Capacitor.Plugins) || {}, tp = pl.TelaPlay, so = pl.ScreenOrientation;
+  if (!tp && !so) return toast("Para girar a tela, gere o APK de novo com o workflow atualizado");
+  S.land = on;
+  try { Promise.resolve(tp ? (on ? tp.landscape() : tp.unlock()) : (on ? so.lock({orientation: "landscape"}) : so.unlock())).catch(() => {}); } catch (_) {}
+  $("pfs").innerHTML = ic(on ? "shrink" : "expand");
+}
+function syncOrientation() {
+  if (!isNative()) return;
+  const full = vis("player") && !document.body.classList.contains("drawer");
+  if (full && !S.land) setLandscape(true);
+  else if (!full && S.land) setLandscape(false);
+}
 async function toggleFs() {
+  if (isNative()) return setLandscape(!S.land);
   try {
     if (document.fullscreenElement) await document.exitFullscreen();
     else {

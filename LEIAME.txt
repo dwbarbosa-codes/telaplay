@@ -1,15 +1,18 @@
-COMO GERAR O APK (sem instalar nada no computador)
+COMO GERAR O APK DO TELAPLAY (sem instalar nada no computador)
 
-1. Crie uma conta gratuita em github.com e clique em "New repository". Dê um nome (ex.: telaplay) e crie.
-2. No repositório, clique em "uploading an existing file" e envie TUDO que está dentro desta pasta:
-   package.json, capacitor.config.json, as pastas www, android-res, android-src e android-assets e a pasta .github
-   (se a pasta .github não subir, clique em Add file > Create new file, digite o nome
-    .github/workflows/build-apk.yml e cole o conteúdo do arquivo de mesmo nome).
-3. Clique em "Commit changes".
-4. Abra a aba "Actions". O "Gerar APK" roda sozinho (leva uns 5 a 10 minutos).
-   Se não rodar, clique em "Gerar APK" > "Run workflow".
-5. Quando ficar verde, abra a execução e baixe "telaplay-apk" em "Artifacts".
-6. Descompacte o zip baixado. Dentro está o app-debug.apk.
-7. Passe o APK para o celular e abra. Se o Android pedir, permita "instalar apps de fontes desconhecidas".
+1. No GitHub, abra o seu repositorio PRIVADO (ele guarda a chave debug.keystore).
+2. Envie para o repositorio (Add file > Upload files) o conteudo desta pasta:
+   www, android-res, capacitor.config.json, package.json e debug.keystore.
+   Arquivos com o mesmo nome substituem os antigos.
+3. A pasta oculta .github nao sobe ao arrastar. Abra .github/workflows/build-apk.yml no
+   repositorio (ou crie com Add file > Create new file), clique no lapis e troque TODO o
+   conteudo pelo do arquivo build-apk.yml desta pasta. Clique em Commit changes.
+4. Abra a aba Actions e espere o V verde (5 a 10 minutos). Se nao iniciar, clique em
+   "Gerar APK" > Run workflow.
+5. Na execucao concluida, role ate Artifacts e baixe "telaplay-apk". Descompacte: o APK e o app-debug.apk.
+6. Instale no celular (autorize "fontes desconhecidas" se pedir).
 
-Para atualizar o app depois: substitua www/index.html no repositório e faça commit. Um novo APK é gerado.
+PARA ATUALIZAR SO O APP (sem mudar nada no Android): troque apenas www/index.html.
+PARA RECEBER MUDANCAS DO ANDROID (tela cheia, rotacao, icone): troque tambem o build-apk.yml.
+Para conferir: na execucao do Actions deve existir o passo "Tela cheia, rotacao e tela de abertura (TelaPlay)".
+Instalando por cima do app antigo: se o Android recusar ("app nao instalado"), desinstale o antigo uma vez.
