@@ -454,6 +454,11 @@ body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-i
   <h4>Listas e histórico</h4>
   <button class="out wide" id="cclr">Limpar o cache das listas</button>
   <button class="out wide" id="chist">Limpar histórico e marcas de assistido</button>
+  <h4>Sobre e diagnóstico</h4>
+  <div class="crow"><span>Versão do app</span><span id="dver"></span></div>
+  <div class="crow"><span>Executando como</span><span id="dmode"></span></div>
+  <div class="crow"><span>Giro de tela (APK)</span><span id="drot"></span></div>
+  <button class="out wide" id="dtest">Testar giro de tela</button>
   <p id="cmsg"></p>
  </div>
 </section>
@@ -1237,12 +1242,19 @@ $("plist").onclick = async () => {
 };
 
 const isNative = () => !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform());
-function setLandscape(on) {
-  const pl = (window.Capacitor && Capacitor.Plugins) || {}, tp = pl.TelaPlay, so = pl.ScreenOrientation;
-  if (!tp && !so) return toast("Para girar a tela, gere o APK de novo com o workflow atualizado");
-  S.land = on;
-  try { Promise.resolve(tp ? (on ? tp.landscape() : tp.unlock()) : (on ? so.lock({orientation: "landscape"}) : so.unlock())).catch(() => {}); } catch (_) {}
-  $("pfs").innerHTML = ic(on ? "shrink" : "expand");
+const APP_VER = "25/10/2026 · versão 4";
+const nativeCall = (plugin, method, opts) => {
+  const c = window.Capacitor;
+  if (!c || !c.nativePromise) return Promise.reject(new Error("sem ponte nativa"));
+  return c.nativePromise(plugin, method, opts || {});
+};
+async function setLandscape(on) {
+  S.land = on; $("pfs").innerHTML = ic(on ? "shrink" : "expand");
+  try { await nativeCall("TelaPlay", on ? "landscape" : "unlock"); }
+  catch (e) {
+    S.land = false; $("pfs").innerHTML = ic("expand");
+    if (!S.rotWarned) { S.rotWarned = true; toast("Este APK ainda não gira a tela: gere de novo com o workflow atualizado"); }
+  }
 }
 function syncOrientation() {
   if (!isNative()) return;
@@ -1648,8 +1660,12 @@ addEventListener("keydown", e => {
   if (spatial(k, navRoots())) e.preventDefault();
 });
 try {
-  const A = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.App;
-  if (A && A.addListener) A.addListener("backButton", () => { if (!handleBack() && A.exitApp) A.exitApp(); });
+  const C = window.Capacitor;
+  if (C && C.isNativePlatform && C.isNativePlatform() && C.nativeCallback) {
+    C.nativeCallback("App", "addListener", {eventName: "backButton"}, () => {
+      if (!handleBack()) nativeCall("App", "exitApp").catch(() => {});
+    });
+  }
 } catch (_) {}
 
 /* ---------- ajustes de tela ---------- */
@@ -1681,7 +1697,22 @@ $("cbody").onclick = async e => {
     renderCont(); $("cmsg").textContent = "Histórico apagado.";
   }
 };
-$("cfgbtn").onclick = () => { show("cfg"); applyUi(); $("cmsg").textContent = ""; };
+async function diagnose() {
+  $("dver").textContent = APP_VER;
+  $("dmode").textContent = isNative() ? "APK (Android)" : "Navegador";
+  if (!isNative()) { $("drot").textContent = "não se aplica"; return; }
+  $("drot").textContent = "verificando...";
+  try { await nativeCall("TelaPlay", "unlock"); $("drot").textContent = "disponível"; }
+  catch (e) { $("drot").textContent = "ausente: gere o APK de novo com o workflow atualizado"; }
+}
+$("dtest").onclick = async () => {
+  if (!isNative()) { $("cmsg").textContent = "O teste só funciona no APK."; return; }
+  try {
+    await nativeCall("TelaPlay", "landscape"); $("cmsg").textContent = "Girando para a paisagem por 2 segundos...";
+    setTimeout(async () => { try { await nativeCall("TelaPlay", "unlock"); } catch (_) {} $("cmsg").textContent = "Teste concluído."; }, 2000);
+  } catch (e) { $("cmsg").textContent = "Não foi possível girar: o APK não tem o plugin de rotação."; }
+};
+$("cfgbtn").onclick = () => { show("cfg"); applyUi(); $("cmsg").textContent = ""; diagnose(); };
 $("cback").onclick = () => show("home");
 applyUi();
 
